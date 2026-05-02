@@ -14,7 +14,7 @@ const initialContext: RecommendationContext = {
   price: "$$",
   category: "Dinner",
   vibe: "Lively",
-  restaurantCount: 3
+  restaurantCount: 1
 };
 
 const userId = "demo_user";
