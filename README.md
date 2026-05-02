@@ -51,4 +51,4 @@ Turn `ALLOW_DATABASE_SEED` back to `false` after seeding.
 
 ## Next Data Step
 
-Google Places fields can be added as optional enrichment columns after the MVP is working against Supabase/Postgres.
+Google Places fields can be added as optional enrichment columns after the MVP is working against Supabase/Postgres. See `docs/google-places-ingestion.md` for the recommended ingestion flow.

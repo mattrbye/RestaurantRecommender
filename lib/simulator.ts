@@ -1,5 +1,5 @@
 import { categories, neighborhoods, prices, vibes } from "./options";
-import { recommendRestaurant, rewardByAction } from "./bandit";
+import { recommendRestaurants, rewardByAction } from "./bandit";
 import type { RecommendationContext, RecommendationEvent, Restaurant, RewardAction } from "./types";
 
 type SyntheticUser = {
@@ -29,12 +29,14 @@ function makeUsers(count: number): SyntheticUser[] {
 
 function chooseContext(user: SyntheticUser, step: number): RecommendationContext {
   const explore = pseudoRandom(step + user.id.length) < user.adventurousness;
+  const restaurantCounts = [1, 2, 3, 5];
 
   return {
     neighborhood: explore ? neighborhoods[step % neighborhoods.length] : user.favoriteNeighborhood,
     price: explore ? prices[(step * 2) % prices.length] : user.favoritePrice,
     category: explore ? categories[(step * 3) % categories.length] : user.favoriteCategory,
-    vibe: explore ? vibes[(step * 5) % vibes.length] : user.favoriteVibe
+    vibe: explore ? vibes[(step * 5) % vibes.length] : user.favoriteVibe,
+    restaurantCount: restaurantCounts[step % restaurantCounts.length]
   };
 }
 
@@ -64,12 +66,12 @@ export function simulateEvents(restaurants: Restaurant[], trials = 900, userCoun
   for (let step = 0; step < trials; step += 1) {
     const user = users[step % users.length];
     const context = chooseContext(user, step);
-    const recommendation = recommendRestaurant(restaurants, events, context);
-    if (!recommendation) continue;
+    const recommendations = recommendRestaurants(restaurants, events, context, context.restaurantCount);
+    if (recommendations.length === 0) continue;
 
     const timestamp = new Date(startedAt + step * 1000 * 60 * 9).toISOString();
-    const impression: RecommendationEvent = {
-      id: `sim_imp_${step}`,
+    const impressionEvents: RecommendationEvent[] = recommendations.map((recommendation, recommendationIndex) => ({
+      id: `sim_imp_${step}_${recommendationIndex}`,
       timestamp,
       userId: user.id,
       restaurantId: recommendation.restaurant.id,
@@ -77,21 +79,27 @@ export function simulateEvents(restaurants: Restaurant[], trials = 900, userCoun
       reward: rewardByAction.impression,
       context,
       modelScore: recommendation.score
-    };
+    }));
 
-    const action = simulateAction(user, recommendation.restaurant, context, step);
+    const selectedRecommendation = recommendations
+      .map((recommendation) => ({
+        recommendation,
+        action: simulateAction(user, recommendation.restaurant, context, step)
+      }))
+      .sort((a, b) => rewardByAction[b.action] - rewardByAction[a.action])[0];
+
     const response: RecommendationEvent = {
       id: `sim_evt_${step}`,
       timestamp,
       userId: user.id,
-      restaurantId: recommendation.restaurant.id,
-      action,
-      reward: rewardByAction[action],
+      restaurantId: selectedRecommendation.recommendation.restaurant.id,
+      action: selectedRecommendation.action,
+      reward: rewardByAction[selectedRecommendation.action],
       context,
-      modelScore: recommendation.score
+      modelScore: selectedRecommendation.recommendation.score
     };
 
-    events.push(impression, response);
+    events.push(...impressionEvents, response);
   }
 
   return events;

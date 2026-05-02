@@ -77,7 +77,7 @@ export function topRestaurants(events: RecommendationEvent[], restaurants: Resta
     .slice(0, 8);
 }
 
-export function rewardBySegment(events: RecommendationEvent[], segment: "neighborhood" | "price" | "category" | "vibe") {
+export function rewardBySegment(events: RecommendationEvent[], segment: "neighborhood" | "price" | "category" | "vibe" | "restaurantCount") {
   const buckets = new Map<string, { segment: string; reward: number; responses: number }>();
 
   for (const event of events) {

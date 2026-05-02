@@ -10,7 +10,7 @@ export const rewardByAction = {
 } as const;
 
 export function contextKey(context: RecommendationContext): string {
-  return [context.neighborhood, context.price, context.category, context.vibe].join("|");
+  return [context.neighborhood, context.price, context.category, context.vibe, context.restaurantCount].join("|");
 }
 
 export function restaurantMatchesContext(restaurant: Restaurant, context: RecommendationContext): boolean {
@@ -105,6 +105,26 @@ export function recommendRestaurant(
   });
 
   return scored.sort((a, b) => b.score - a.score)[0];
+}
+
+export function recommendRestaurants(
+  restaurants: Restaurant[],
+  events: RecommendationEvent[],
+  context: RecommendationContext,
+  count: number,
+  excludeIds: string[] = []
+) {
+  const picks = [];
+  const excluded = [...excludeIds];
+
+  for (let index = 0; index < count; index += 1) {
+    const pick = recommendRestaurant(restaurants, events, context, excluded);
+    if (!pick) break;
+    picks.push(pick);
+    excluded.push(pick.restaurant.id);
+  }
+
+  return picks;
 }
 
 export function makeEvent(

@@ -67,6 +67,7 @@ export type RecommendationContext = {
   price: PriceRange | "Any";
   category: Category | "Any";
   vibe: Vibe | "Any";
+  restaurantCount: number;
 };
 
 export type RewardAction = "impression" | "skip" | "details" | "save" | "reserve" | "order";
